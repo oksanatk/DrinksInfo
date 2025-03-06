@@ -1,4 +1,5 @@
-﻿using DrinksInfo.Services;
+﻿using DrinksInfo.Models;
+using DrinksInfo.Services;
 using Spectre.Console;
 
 namespace DrinksInfo.Views;
@@ -6,31 +7,51 @@ namespace DrinksInfo.Views;
 class MenuView
 {
     private readonly ApiService _apiService;
-    private List<string> categoriesList = null!;
-    public string CategorySelection { get; set; } = "";
 
-    public MenuView(ApiService httpSerivce)
+    public MenuView(ApiService apiSerivce)
     {
-        _apiService = httpSerivce;
-
-        _ = Initialize();
+        _apiService = apiSerivce;
     }
 
-    private async Task Initialize()
+    public async Task ShowCategoriesMenu()
     {
-        categoriesList = await _apiService.GetCategoriesList();
-        categoriesList.Add("Quit");
+        string category = "";
+        do
+        {
+            List<string> allCategories = await _apiService.GetCategoriesListAsync();
+            allCategories.Add("Quit");
 
-        ShowCategoriesMenu();
+            category = AnsiConsole.Prompt(
+                                 new SelectionPrompt<string>()
+                                .Title("Welcome! Choose a drink category.")
+                                .AddChoices(allCategories));
+
+            AnsiConsole.WriteLine($"You chose {category}.");
+            if (category != "Quit")
+            {
+                await ShowDrinksInCategory(category);
+            } 
+        } while (category != "Quit");
     }
 
-    public void ShowCategoriesMenu()
+    private async Task ShowDrinksInCategory(string category)
     {
-        string category = AnsiConsole.Prompt(
-                             new SelectionPrompt<string>()
-                            .Title("Welcome! Choose a drink category.")
-                            .AddChoices(categoriesList));
+        Drink drinkPicked = new();
 
-        AnsiConsole.WriteLine($"You chose {category}.");
+        do
+        {
+            List<Drink> drinksInCategory = await _apiService.GetDrinksInCategoryAsync(category);
+            drinksInCategory.Add(new Drink { Category = "Go Back" });
+
+            drinkPicked = AnsiConsole.Prompt(
+                                new SelectionPrompt<Drink>()
+                                .Title($"Pick a drink from {category}:")
+                                .AddChoices(drinksInCategory));
+            if (drinkPicked.Category != "Go Back")
+            {
+                AnsiConsole.WriteLine($"You picked {drinkPicked}");
+                // TODO - display drink details
+            } 
+        } while (drinkPicked.Category != "Go Back"); 
     }
 }

@@ -5,10 +5,12 @@ namespace DrinksInfo;
 
 class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
-        HttpClient httpClient = new HttpClient();
+        using HttpClient httpClient = new HttpClient();
         ApiService apiService = new ApiService(httpClient);
         MenuView menuView = new MenuView(apiService);
+
+        await menuView.ShowCategoriesMenu();
     }
 }
