@@ -1,5 +1,6 @@
 ﻿using DrinksInfo.Models;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace DrinksInfo.Services;
 
@@ -33,6 +34,7 @@ class ApiService
         return categoryNames;
     }
 
+
     internal async Task<List<Drink>> GetDrinksInCategoryAsync(string category)
     {
         List<Drink> drinksInCategory = new();
@@ -51,5 +53,19 @@ class ApiService
             }
         }
         return drinksInCategory;
+    }
+
+    internal async Task<Drink> GetDrinkByIdAsync(int id)
+    {
+        HttpResponseMessage httpResponse = await _httpClient.GetAsync($"https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i={id}");
+        string jsonContent = await httpResponse.Content.ReadAsStringAsync();
+        Root? root = JsonConvert.DeserializeObject<Root>(jsonContent);
+
+        if (root != null)
+        {
+
+        }
+
+        return new Drink();
     }
 }
