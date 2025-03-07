@@ -61,7 +61,7 @@ class MenuView
                 AnsiConsole.WriteLine($"You picked {drinkPickedName}. The id is {drinkPicked.Id}");
                 // TODO - display drink details
 
-                GetDrinkDetails(drinkPicked.Id);
+                await GetDrinkDetails(drinkPicked.Id);
             } 
         } while (drinkPickedName != "Go Back"); 
     }

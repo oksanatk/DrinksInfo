@@ -1,6 +1,5 @@
 ﻿using DrinksInfo.Models;
 using Newtonsoft.Json;
-using System.Threading.Tasks;
 
 namespace DrinksInfo.Services;
 
@@ -19,7 +18,7 @@ class ApiService
 
         HttpResponseMessage response = await _httpClient.GetAsync("https://www.thecocktaildb.com/api/json/v1/1/list.php?c=list");
         string jsonContent = await response.Content.ReadAsStringAsync();
-        Root? rootDrinks = JsonConvert.DeserializeObject<Root>(jsonContent);
+        RootDrinkResponse? rootDrinks = JsonConvert.DeserializeObject<RootDrinkResponse>(jsonContent);
 
         if (rootDrinks !=null && rootDrinks.Drinks != null)
         {
@@ -43,7 +42,7 @@ class ApiService
 
         HttpResponseMessage httpResponse = await _httpClient.GetAsync(categoryEndpoint);
         string jsonContent = await httpResponse.Content.ReadAsStringAsync();
-        Root? root = JsonConvert.DeserializeObject<Root>(jsonContent);
+        RootDrinkResponse? root = JsonConvert.DeserializeObject<RootDrinkResponse>(jsonContent);
 
         if (root != null)
         {
@@ -57,15 +56,31 @@ class ApiService
 
     internal async Task<Drink> GetDrinkByIdAsync(int id)
     {
+        Drink drink = new();
+
         HttpResponseMessage httpResponse = await _httpClient.GetAsync($"https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i={id}");
         string jsonContent = await httpResponse.Content.ReadAsStringAsync();
-        Root? root = JsonConvert.DeserializeObject<Root>(jsonContent);
+        RootDrinkResponse? rootResponse = JsonConvert.DeserializeObject<RootDrinkResponse>(jsonContent);
 
-        if (root != null)
+        if (rootResponse?.Drinks != null && rootResponse.Drinks.Length > 0)
         {
+            drink = rootResponse.Drinks[0];
+            var rawData = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonContent);
 
+            if (rawData != null && rawData.TryGetValue("drinks", out var drinksObj))
+            {
+                var drinksList = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(JsonConvert.SerializeObject(drinksObj));
+                if (drinksList != null && drinksList.Count > 0)
+                {
+                    drink?.PopulateIngredientsMeasurements(drinksList[0]);
+                }               
+            }
         }
 
+        if (drink!= null)
+        {
+            return drink;
+        }
         return new Drink();
     }
 }

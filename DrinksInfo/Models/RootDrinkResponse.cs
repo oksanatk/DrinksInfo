@@ -2,7 +2,7 @@
 
 namespace DrinksInfo.Models;
 
-class Root
+class RootDrinkResponse
 {
     [JsonProperty("drinks")]
     public Drink[] Drinks { get; set; } = null!;
