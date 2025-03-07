@@ -1,6 +1,7 @@
 ﻿using DrinksInfo.Models;
 using DrinksInfo.Services;
 using Spectre.Console;
+using System.Reflection;
 
 namespace DrinksInfo.Views;
 
@@ -18,6 +19,7 @@ class MenuView
         string category = "";
         do
         {
+            Console.Clear();
             List<string> allCategories = await _apiService.GetCategoriesListAsync();
             allCategories.Add("Quit");
 
@@ -28,7 +30,6 @@ class MenuView
                                 .MoreChoicesText("Scroll down for more category options.")
                                 .AddChoices(allCategories));
 
-            AnsiConsole.WriteLine($"You chose {category}.");
             if (category != "Quit")
             {
                 await ShowDrinksInCategory(category);
@@ -42,6 +43,7 @@ class MenuView
 
         do
         {
+            Console.Clear();
             List<Drink> drinksInCategory = await _apiService.GetDrinksInCategoryAsync(category);
             drinksInCategory.Add(new Drink { Name = "Go Back" });
 
@@ -58,16 +60,51 @@ class MenuView
 
             if (drinkPicked.Name != "Go Back")
             {
-                AnsiConsole.WriteLine($"You picked {drinkPickedName}. The id is {drinkPicked.Id}");
-                // TODO - display drink details
-
-                await GetDrinkDetails(drinkPicked.Id);
+                await ShowDrinkDetails(drinkPicked.Id);
             } 
         } while (drinkPickedName != "Go Back"); 
     }
 
-    private async Task GetDrinkDetails(int id)
+    private async Task ShowDrinkDetails(int id)
     {
-        Drink drinkChosen = await _apiService.GetDrinkByIdAsync(id);
+        Drink drink = await _apiService.GetDrinkByIdAsync(id);
+
+        foreach(PropertyInfo prop in drink.GetType().GetProperties())
+        {
+            Type type = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            if (!String.IsNullOrEmpty(prop.GetValue(drink)?.ToString()))
+            {
+                switch (prop.Name)
+                {
+                    case string name when name.Contains("Instructions"):
+                        AnsiConsole.MarkupLine($"[green]{prop.Name}:[/] {prop.GetValue(drink)?.ToString()}\n");
+                        break;
+                    case "IngredientsMeasures":
+
+                        AnsiConsole.MarkupLine("[darkseagreen2]Ingredients and Measurements:[/]");
+                        foreach(KeyValuePair<string, string> ingredientMeasure in drink.IngredientsMeasures)
+                        {
+                            AnsiConsole.MarkupLine($"\t[darkseagreen2]{ingredientMeasure.Key} : {ingredientMeasure.Value}[/]");
+                        }
+                        Console.WriteLine();
+
+                        break;
+                    case "DateModified":
+                        AnsiConsole.MarkupLine($"[darkorange3]Date Modified:[/] {prop.GetValue(drink)?.ToString()}\n");
+                        break;
+                    case "CreativeCommonsConfirmed":
+                        AnsiConsole.MarkupLine($"[darkorange3]Creative Commons Confirmed:[/] {prop.GetValue(drink)?.ToString()}\n");
+                        break;
+                    case "ImageThumbnailUrl":
+                        AnsiConsole.MarkupLine($"[bold yellow]Image Thumbnail URL link:[/] {prop.GetValue(drink)?.ToString()} \n");
+                        break;
+                    default:
+                        AnsiConsole.MarkupLine($"[bold yellow]{prop.Name}:[/] {prop.GetValue(drink)?.ToString()}\n");
+                        break;
+                }
+            }
+        }
+        AnsiConsole.MarkupLine("\nPress the [yellow]Enter[/] key to continue.");
+        Console.ReadLine();
     }
 }
