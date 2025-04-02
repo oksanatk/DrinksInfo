@@ -47,7 +47,7 @@ class Drink
     [JsonProperty("strCreativeCommonsConfirmed")]
     public string CreativeCommonsConfirmed { get; set; } = "";
     [JsonProperty("dateModified")]
-    public DateTime DateModified { get; set; }
+    public DateTime? DateModified { get; set; }
 
     public void PopulateIngredientsMeasurements(Dictionary<string, object> rawData)
     {
